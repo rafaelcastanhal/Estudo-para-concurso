@@ -85,6 +85,7 @@ export const QuizArea: React.FC<Props> = ({
   };
 
   // Helper to render Markdown bold (e.g. **text**) as <strong> text
+  // Used ONLY for Question Command and Options
   const renderFormattedText = (text: string) => {
     if (!text) return null;
     
@@ -99,6 +100,15 @@ export const QuizArea: React.FC<Props> = ({
       // Unwrap brackets if they exist (legacy behavior) and just return the part
       return part.replace(/\[(.*?)\]/g, '$1');
     });
+  };
+
+  // Helper to STRIP formatting (remove **) for Explanations/Feedback
+  const stripFormatting = (text: string) => {
+    if (!text) return "";
+    return text
+      .replace(/\*\*/g, '')   // Remove bold markers
+      .replace(/__/g, '')     // Remove italic markers
+      .replace(/\[.*?\]/g, (match) => match.slice(1, -1)); // Unwrap brackets
   };
 
   // Function to render option text beautifully, handling separators like '|'
@@ -131,11 +141,11 @@ export const QuizArea: React.FC<Props> = ({
   const animationClass = direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left';
 
   return (
-    <div className={`w-full max-w-[1200px] mx-auto p-2 md:p-4 flex flex-col gap-4 pb-20 relative h-full ${animationClass}`}>
+    <div className="w-full max-w-[1200px] mx-auto p-2 md:p-4 flex flex-col gap-5 pb-20 relative h-full">
       
       {/* Review Modal */}
       {showReviewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setShowReviewModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in" onClick={() => setShowReviewModal(false)}>
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
               <div>
@@ -182,7 +192,8 @@ export const QuizArea: React.FC<Props> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                        <p className="text-sm font-bold text-[#0d141b] dark:text-slate-200 truncate">Questão {idx + 1}</p>
-                       <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{q.question}</p>
+                       {/* Strip formatting for the review list preview */}
+                       <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{stripFormatting(q.question)}</p>
                     </div>
                     {isActive && <span className="text-xs font-bold text-primary uppercase tracking-wider">Atual</span>}
                   </div>
@@ -193,65 +204,65 @@ export const QuizArea: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Unified Question Card */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors duration-300 shrink-0 flex flex-col">
-        
-        {/* Integrated Header Toolbar */}
-        <div className="bg-slate-50/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 backdrop-blur-sm">
-            
-            {/* Left: Back + Title */}
-            <div className="flex items-center gap-3 overflow-hidden w-full md:w-auto">
-                <button 
-                  onClick={onBack}
-                  className="flex items-center justify-center size-9 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-red-500 hover:border-red-200 transition-colors shrink-0 shadow-sm"
-                  title="Sair para o Menu"
-                >
-                  <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-                </button>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Estudo Reverso</span>
-                  <h2 className="text-sm font-bold text-[#0d141b] dark:text-slate-200 truncate leading-tight">
-                      {topic.name}
-                  </h2>
-                </div>
-            </div>
+      {/* --- DETACHED HEADER SECTION --- */}
+      {/* ADDED fade-in class to keep header stable but appearing smoothly */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 fade-in">
+          
+          {/* Left: Back + Title */}
+          <div className="flex items-center gap-3 w-full md:w-auto">
+              <button 
+                onClick={onBack}
+                className="flex items-center justify-center size-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-red-500 hover:border-red-200 hover:shadow-sm transition-all shrink-0"
+                title="Sair para o Menu"
+              >
+                <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+              </button>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Estudo Reverso</span>
+                <h2 className="text-lg font-bold text-[#0d141b] dark:text-slate-100 truncate leading-tight">
+                    {topic.name}
+                </h2>
+              </div>
+          </div>
 
-            {/* Right: Controls */}
-            <div className="flex items-center justify-between w-full md:w-auto gap-3 pl-12 md:pl-0">
-                <div className="flex items-center bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <button 
-                      onClick={onPrevious} 
-                      disabled={currentIndex === 0}
-                      className="size-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-all disabled:opacity-30 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">chevron_left</span>
-                    </button>
-                    <div 
-                      className="px-2 text-xs font-bold text-slate-600 dark:text-slate-300 min-w-[80px] text-center cursor-pointer hover:text-primary transition-colors flex items-center justify-center gap-1 border-x border-slate-100 dark:border-slate-700/50 h-5"
-                      onClick={() => setShowReviewModal(true)}
-                    >
-                      Questão {currentIndex + 1}
-                      <span className="material-symbols-outlined text-[14px] opacity-50">expand_more</span>
-                    </div>
-                    <button 
-                      onClick={onNext} 
-                      className="size-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-all text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-                    </button>
-                </div>
+          {/* Right: Floating Controls */}
+          <div className="flex items-center justify-between w-full md:w-auto gap-3">
+              <span className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold uppercase tracking-wider border shadow-sm ${
+                question.difficulty === 'Difícil' ? 'bg-red-50 text-red-700 border-red-100 dark:bg-red-900/30 dark:text-red-300 dark:border-red-900/50' : 
+                question.difficulty === 'Médio' ? 'bg-yellow-50 text-yellow-700 border-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-900/50' : 'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-900/50'
+              }`}>
+                {question.difficulty}
+              </span>
 
-                <span className={`px-2 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider border ${
-                  question.difficulty === 'Difícil' ? 'bg-red-50 text-red-700 border-red-100 dark:bg-red-900/30 dark:text-red-300 dark:border-red-900/50' : 
-                  question.difficulty === 'Médio' ? 'bg-yellow-50 text-yellow-700 border-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-900/50' : 'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-900/50'
-                }`}>
-                  {question.difficulty}
-                </span>
-            </div>
-        </div>
+              {/* Navigation Pill */}
+              <div className="flex items-center bg-white dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700 shadow-sm">
+                  <button 
+                    onClick={onPrevious} 
+                    disabled={currentIndex === 0}
+                    className="size-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+                  </button>
+                  <div 
+                    className="px-3 text-xs font-bold text-slate-600 dark:text-slate-300 min-w-[90px] text-center cursor-pointer hover:text-primary transition-colors flex items-center justify-center gap-1 border-x border-slate-100 dark:border-slate-700/50 h-5"
+                    onClick={() => setShowReviewModal(true)}
+                  >
+                    Questão {currentIndex + 1}
+                    <span className="material-symbols-outlined text-[16px] opacity-40">expand_more</span>
+                  </div>
+                  <button 
+                    onClick={onNext} 
+                    className="size-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                  </button>
+              </div>
+          </div>
+      </div>
 
-        {/* Card Body */}
-        <div className="p-4 md:p-8">
+      {/* --- QUESTION CARD (DETACHED) --- */}
+      {/* APPLIED animationClass here for specific slide effect on the card only */}
+      <div className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors duration-300 shrink-0 flex flex-col p-5 md:p-8 ${animationClass}`}>
           
           {/* Meta Info Row */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4 md:mb-6">
@@ -268,6 +279,7 @@ export const QuizArea: React.FC<Props> = ({
 
           <div className="mb-6 md:mb-8">
             <p className="text-[#0d141b] dark:text-slate-200 text-base md:text-lg leading-relaxed font-medium text-left">
+              {/* USE FORMATTED TEXT FOR QUESTION */}
               {renderFormattedText(question.question)}
             </p>
           </div>
@@ -278,7 +290,7 @@ export const QuizArea: React.FC<Props> = ({
               const isCorrect = question.correctAnswerIndex === idx;
               const isEliminated = eliminatedOptions.includes(idx);
               
-              // Key changes here: 'relative', 'pl-10 md:pl-12' to make room for absolute scissors
+              // Styles
               let cardClass = "relative group flex items-start gap-3 py-3 md:py-3.5 pr-3 md:pr-3.5 pl-10 md:pl-12 rounded-xl border cursor-pointer transition-all ";
               let letterClass = "mt-0.5 flex items-center justify-center w-6 h-6 rounded-md border text-xs font-bold shrink-0 transition-all duration-200 ";
               let textClass = `text-sm md:text-base ${isSubmitted && isCorrect ? 'font-bold text-green-900 dark:text-green-300' : 'text-[#0d141b] dark:text-slate-200'}`;
@@ -335,6 +347,7 @@ export const QuizArea: React.FC<Props> = ({
                   </div>
                   <div className="flex-1">
                     <span className={textClass}>
+                      {/* USE FORMATTED TEXT FOR OPTIONS */}
                       {renderOptionContent(option)}
                     </span>
                   </div>
@@ -364,12 +377,11 @@ export const QuizArea: React.FC<Props> = ({
                </button>
              )}
           </div>
-        </div>
       </div>
 
       {/* AI Analysis Section (Visible only after submit) */}
       {isSubmitted && (
-        <div className="animate-fadeIn bg-[#f0f7ff] dark:bg-slate-900/50 rounded-2xl border border-primary/20 dark:border-primary/10 shadow-lg p-5 flex flex-col gap-6">
+        <div className="fade-in bg-[#f0f7ff] dark:bg-slate-900/50 rounded-2xl border border-primary/20 dark:border-primary/10 shadow-lg p-5 flex flex-col gap-6">
           <div className="flex items-center gap-3 border-b border-primary/10 dark:border-slate-700 pb-3">
              <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-md shadow-primary/20">
                <span className="material-symbols-outlined text-[20px]">smart_toy</span>
@@ -389,11 +401,11 @@ export const QuizArea: React.FC<Props> = ({
                    Gabarito Comentado
                  </h5>
                  <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 leading-relaxed text-sm text-slate-700 dark:text-slate-300 text-justify shadow-sm">
-                   {/* DYNAMIC HEADER TO ENSURE COHERENCE */}
                    <span className="block font-bold text-green-700 dark:text-green-400 mb-1 border-b border-green-100 dark:border-slate-700 pb-1">
                      A alternativa correta é a letra {letters[question.correctAnswerIndex]}.
                    </span>
-                   {renderFormattedText(question.correctExplanation)}
+                   {/* STRIP FORMATTING HERE */}
+                   {stripFormatting(question.correctExplanation)}
                  </div>
                </section>
 
@@ -410,7 +422,8 @@ export const QuizArea: React.FC<Props> = ({
                            <span className="material-symbols-outlined text-[18px]">lightbulb</span>
                         </div>
                         <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed text-justify font-medium">
-                           {renderFormattedText(question.conceptExplanation)}
+                           {/* STRIP FORMATTING HERE */}
+                           {stripFormatting(question.conceptExplanation)}
                         </p>
                      </div>
                    </div>
@@ -424,7 +437,8 @@ export const QuizArea: React.FC<Props> = ({
                  </h5>
                  <div className="bg-primary/5 dark:bg-primary/10 border-l-4 border-primary p-3 rounded-r-lg">
                    <p className="text-sm text-[#0d141b] dark:text-slate-200 italic font-medium leading-relaxed">
-                     "{renderFormattedText(question.legalBasis)}"
+                     "{/* STRIP FORMATTING HERE */}
+                     {stripFormatting(question.legalBasis)}"
                    </p>
                  </div>
                </section>
@@ -456,7 +470,10 @@ export const QuizArea: React.FC<Props> = ({
                                     {label.replace(/[:\s-]*$/, '')}
                                   </span>
                                 )}
-                                <p className="text-xs text-slate-600 dark:text-slate-400 leading-snug">{renderFormattedText(text)}</p>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 leading-snug">
+                                  {/* STRIP FORMATTING HERE */}
+                                  {stripFormatting(text)}
+                                </p>
                              </div>
                           </div>
                         );
@@ -474,7 +491,8 @@ export const QuizArea: React.FC<Props> = ({
                      <span className="text-xs font-black uppercase tracking-wide">Dica Estratégica</span>
                    </div>
                    <p className="text-xs text-slate-700 dark:text-slate-200 font-bold leading-relaxed relative z-10">
-                     {renderFormattedText(question.studyTip)}
+                     {/* STRIP FORMATTING HERE */}
+                     {stripFormatting(question.studyTip)}
                    </p>
                 </div>
              </div>
